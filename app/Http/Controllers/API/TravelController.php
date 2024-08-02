@@ -61,7 +61,7 @@ class TravelController extends Controller
             'description' => 'nullable|string',
             'start_date' => 'required|date',
             'end_date' => 'required|date',
-            'image' => 'nullable|string', 
+            'image' => 'nullable|string', // Accepts base64 encoded image string
             'meal' => 'nullable|string',
             'curiosity' => 'nullable|string',
         ]);
@@ -120,6 +120,7 @@ class TravelController extends Controller
     
         return response()->json($travel, 200);
     }
+    
         private function generateUniqueSlug($name)
     {
         $slug = Str::slug($name, '-');
