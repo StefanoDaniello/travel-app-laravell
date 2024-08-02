@@ -11,12 +11,14 @@ use Illuminate\Support\Facades\Storage;
 class TravelController extends Controller
 {
 
-    public function index(){
+    public function index()
+    {
         $travels = Travel::all();
         return response()->json($travels, 200);
     }
 
-    public function show($slug){
+    public function show($slug)
+    {
         $travel = Travel::where('slug', $slug)->first();
         return response()->json($travel, 200);
     }
@@ -61,26 +63,26 @@ class TravelController extends Controller
             'description' => 'nullable|string',
             'start_date' => 'required|date',
             'end_date' => 'required|date',
-            'image' => 'nullable|string', // Accepts base64 encoded image string
+            'image' => 'nullable|string',
             'meal' => 'nullable|string',
             'curiosity' => 'nullable|string',
         ]);
-    
+
         $travel = Travel::where('slug', $slug)->firstOrFail();
-    
+
         if ($request->name !== $travel->name) {
             $slug = $this->generateUniqueSlug($request->name);
         } else {
             $slug = $travel->slug;
         }
-    
+
         if ($request->image) {
             // Decode the base64 image
             $imageData = $request->image;
             list($type, $data) = explode(';', $imageData);
-            list(, $data)      = explode(',', $data);
+            list(, $data) = explode(',', $data);
             $data = base64_decode($data);
-    
+
             // Determine the image type
             if (strpos($type, 'jpeg') !== false) {
                 $extension = 'jpg';
@@ -91,23 +93,23 @@ class TravelController extends Controller
             } else {
                 return response()->json(['error' => 'Invalid image type'], 422);
             }
-    
+
             // Generate a unique file name and store the image
             $fileName = Str::random() . '.' . $extension;
             $filePath = 'images/' . $fileName;
             Storage::disk('public')->put($filePath, $data);
-    
+
             // Log the image path
             \Log::info('Image saved to: ' . $filePath);
-    
+
             // Delete the old image if it exists
             if ($travel->image) {
                 Storage::disk('public')->delete($travel->image);
             }
-    
+
             $travel->image = $filePath;
         }
-    
+
         $travel->update([
             'name' => $request->name,
             'description' => $request->description,
@@ -117,11 +119,11 @@ class TravelController extends Controller
             'curiosity' => $request->curiosity,
             'slug' => $slug,
         ]);
-    
+
         return response()->json($travel, 200);
     }
-    
-        private function generateUniqueSlug($name)
+
+    private function generateUniqueSlug($name)
     {
         $slug = Str::slug($name, '-');
         $originalSlug = $slug;
