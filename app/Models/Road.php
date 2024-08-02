@@ -9,4 +9,8 @@ class Road extends Model
 {
     use HasFactory;
     protected $guarded = [];
+
+    public function travel(){
+        return $this->hasMany(Travel::class);
+    }
 }
