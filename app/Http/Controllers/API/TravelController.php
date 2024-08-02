@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Travel;
+use App\Models\Road;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
@@ -33,6 +34,7 @@ class TravelController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'meal' => 'nullable|string',
             'curiosity' => 'nullable|string',
+            'road_name' => 'required|string|max:255',
         ]);
 
         $slug = $this->generateUniqueSlug($request->name);
@@ -42,6 +44,12 @@ class TravelController extends Controller
             $imagePath = $request->file('image')->store('images', 'public');
         }
 
+        
+        $road = Road::create([
+            'name' => $request->road_name,
+        ]);
+
+        // Create the travel record and associate it with the road
         $travel = Travel::create([
             'name' => $request->name,
             'description' => $request->description,
@@ -51,7 +59,19 @@ class TravelController extends Controller
             'meal' => $request->meal,
             'curiosity' => $request->curiosity,
             'slug' => $slug,
+            'road_id' => $road->id,
         ]);
+
+        // $travel = Travel::create([
+        //     'name' => $request->name,
+        //     'description' => $request->description,
+        //     'start_date' => $request->start_date,
+        //     'end_date' => $request->end_date,
+        //     'image' => $imagePath,
+        //     'meal' => $request->meal,
+        //     'curiosity' => $request->curiosity,
+        //     'slug' => $slug,
+        // ]);
 
         return response()->json($travel, 201);
     }
@@ -63,6 +83,7 @@ class TravelController extends Controller
             'description' => 'nullable|string',
             'start_date' => 'required|date',
             'end_date' => 'required|date',
+            'road_id' => 'nullable|exists:roads,id',
             'image' => 'nullable|string',
             'meal' => 'nullable|string',
             'curiosity' => 'nullable|string',
@@ -118,6 +139,7 @@ class TravelController extends Controller
             'meal' => $request->meal,
             'curiosity' => $request->curiosity,
             'slug' => $slug,
+            'road_id' => $request->road_id, 
         ]);
 
         return response()->json($travel, 200);
