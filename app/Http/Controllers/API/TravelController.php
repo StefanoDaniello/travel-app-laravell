@@ -12,16 +12,18 @@ use Illuminate\Support\Facades\Storage;
 class TravelController extends Controller
 {
     public function index()
-    {
-        $travels = Travel::all();
-        return response()->json($travels, 200);
-    }
+{
+    $travels = Travel::with('road')->get();
+    return response()->json($travels, 200);
+}
+
 
     public function show($slug)
-    {
-        $travel = Travel::where('slug', $slug)->first();
-        return response()->json($travel, 200);
-    }
+{
+    $travel = Travel::with('road')->where('slug', $slug)->first();
+    return response()->json($travel, 200);
+}
+
 
     public function store(Request $request)
     {
@@ -90,54 +92,93 @@ class TravelController extends Controller
             'description' => 'nullable|string',
             'start_date' => 'required|date',
             'end_date' => 'required|date',
-            'road_id' => 'nullable|exists:road,id',
+            'road.name' => 'required|string|max:255',
+            'road.description' => 'nullable|string',
+            'road.start_date' => 'required|date',
+            'road.end_date' => 'required|date',
+            'road.rate' => 'required|integer',
+            'road.note' => 'nullable|string',
+            'road.image' => 'nullable|string',
             'image' => 'nullable|string',
             'meal' => 'nullable|string',
             'curiosity' => 'nullable|string',
         ]);
-
+    
         $travel = Travel::where('slug', $slug)->firstOrFail();
-
+        $road = Road::find($travel->road_id);
+    
         if ($request->name !== $travel->name) {
-            $slug = $this->generateUniqueSlug($request->name);
+            $travelSlug = $this->generateUniqueSlug($request->name);
         } else {
-            $slug = $travel->slug;
+            $travelSlug = $travel->slug;
         }
-
+    
+        if ($request->road['name'] !== $road->name) {
+            $roadSlug = $this->generateUniqueSlug($request->road['name']);
+        } else {
+            $roadSlug = $road->slug;
+        }
+    
         if ($request->image) {
-            // Decode the base64 image
             $imageData = $request->image;
-            list($type, $data) = explode(';', $imageData);
-            list(, $data) = explode(',', $data);
-            $data = base64_decode($data);
-
-            // Determine the image type
-            if (strpos($type, 'jpeg') !== false) {
-                $extension = 'jpg';
-            } elseif (strpos($type, 'png') !== false) {
-                $extension = 'png';
-            } elseif (strpos($type, 'gif') !== false) {
-                $extension = 'gif';
-            } else {
-                return response()->json(['error' => 'Invalid image type'], 422);
+            if (strpos($imageData, ';base64,') !== false) {
+                list($type, $data) = explode(';base64,', $imageData);
+                $data = base64_decode($data);
+    
+                if (strpos($type, 'image/jpeg') !== false) {
+                    $extension = 'jpg';
+                } elseif (strpos($type, 'image/png') !== false) {
+                    $extension = 'png';
+                } elseif (strpos($type, 'image/gif') !== false) {
+                    $extension = 'gif';
+                } else {
+                    return response()->json(['error' => 'Invalid image type'], 422);
+                }
+    
+                $fileName = Str::random() . '.' . $extension;
+                $filePath = 'images/' . $fileName;
+                Storage::disk('public')->put($filePath, $data);
+    
+                \Log::info('Image saved to: ' . $filePath);
+    
+                if ($travel->image) {
+                    Storage::disk('public')->delete($travel->image);
+                }
+    
+                $travel->image = $filePath;
             }
-
-            // Generate a unique file name and store the image
-            $fileName = Str::random() . '.' . $extension;
-            $filePath = 'images/' . $fileName;
-            Storage::disk('public')->put($filePath, $data);
-
-            // Log the image path
-            \Log::info('Image saved to: ' . $filePath);
-
-            // Delete the old image if it exists
-            if ($travel->image) {
-                Storage::disk('public')->delete($travel->image);
-            }
-
-            $travel->image = $filePath;
         }
-
+    
+        if ($request->road['image']) {
+            $roadImageData = $request->road['image'];
+            if (strpos($roadImageData, ';base64,') !== false) {
+                list($roadType, $roadData) = explode(';base64,', $roadImageData);
+                $roadData = base64_decode($roadData);
+    
+                if (strpos($roadType, 'image/jpeg') !== false) {
+                    $roadExtension = 'jpg';
+                } elseif (strpos($roadType, 'image/png') !== false) {
+                    $roadExtension = 'png';
+                } elseif (strpos($roadType, 'image/gif') !== false) {
+                    $roadExtension = 'gif';
+                } else {
+                    return response()->json(['error' => 'Invalid image type'], 422);
+                }
+    
+                $roadFileName = Str::random() . '.' . $roadExtension;
+                $roadFilePath = 'images/' . $roadFileName;
+                Storage::disk('public')->put($roadFilePath, $roadData);
+    
+                \Log::info('Road image saved to: ' . $roadFilePath);
+    
+                if ($road->image) {
+                    Storage::disk('public')->delete($road->image);
+                }
+    
+                $road->image = $roadFilePath;
+            }
+        }
+    
         $travel->update([
             'name' => $request->name,
             'description' => $request->description,
@@ -145,24 +186,33 @@ class TravelController extends Controller
             'end_date' => $request->end_date,
             'meal' => $request->meal,
             'curiosity' => $request->curiosity,
-            'slug' => $slug,
-            'road_id' => $request->road_id, // Update road_id if provided
+            'slug' => $travelSlug,
         ]);
-
-        return response()->json($travel, 200);
+    
+        $road->update([
+            'name' => $request->road['name'],
+            'description' => $request->road['description'],
+            'start_date' => $request->road['start_date'],
+            'end_date' => $request->road['end_date'],
+            'rate' => $request->road['rate'],
+            'note' => $request->road['note'],
+            'slug' => $roadSlug,
+        ]);
+    
+        return response()->json(['travel' => $travel, 'road' => $road], 200);
     }
-
+    
     private function generateUniqueSlug($name)
     {
         $slug = Str::slug($name, '-');
         $originalSlug = $slug;
         $count = 1;
-
-        while (Travel::where('slug', $slug)->exists()) {
+    
+        while (Travel::where('slug', $slug)->exists() || Road::where('slug', $slug)->exists()) {
             $slug = $originalSlug . '-' . $count;
             $count++;
         }
-
+    
         return $slug;
     }
 }
