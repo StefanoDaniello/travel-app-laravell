@@ -12,6 +12,6 @@ class Road extends Model
     protected $guarded = [];
 
     public function travel(){
-        return $this->hasMany(Travel::class);
+        return $this->belongsTo(Travel::class);
     }
 }

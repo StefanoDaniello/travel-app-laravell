@@ -13,14 +13,15 @@ return new class extends Migration
     {
         Schema::create('road', function (Blueprint $table) {
             $table->id();
-            $table->string('name',255);
+            $table->string('name', 255);
             $table->string('description')->nullable();
             $table->string('image')->nullable();
             $table->date('start_date');
             $table->date('end_date');
             $table->integer('rate')->default(0);
             $table->text('note')->nullable();
-            $table->string('slug',255);
+            $table->string('slug', 255);
+            $table->foreignId('travel_id')->constrained()->onDelete('cascade'); 
             $table->timestamps();
         });
     }

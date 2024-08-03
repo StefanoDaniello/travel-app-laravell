@@ -72,7 +72,7 @@ public function store(Request $request)
         }
 
         $roadSlug = $this->generateUniqueSlug($roadData['name']);
-        $road = Road::create([
+        Road::create([
             'name' => $roadData['name'],
             'description' => $roadData['description'],
             'image' => $roadImagePath,
@@ -81,85 +81,99 @@ public function store(Request $request)
             'rate' => $roadData['rate'],
             'note' => $roadData['note'],
             'slug' => $roadSlug,
+            'travel_id' => $travel->id, // Associa la road al travel
         ]);
-
-        // Associate the road ID with the travel record
-        $travel->road_id = $road->id;
-        $travel->save();
     }
 
     return response()->json($travel, 201);
 }
-    public function update(Request $request, $slug)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date',
-            'road.name' => 'required|string|max:255',
-            'road.description' => 'nullable|string',
-            'road.start_date' => 'required|date',
-            'road.end_date' => 'required|date',
-            'road.rate' => 'required|integer',
-            'road.note' => 'nullable|string',
-            'road.image' => 'nullable|string',
-            'image' => 'nullable|string',
-            'meal' => 'nullable|string',
-            'curiosity' => 'nullable|string',
-        ]);
-    
-        $travel = Travel::where('slug', $slug)->firstOrFail();
-        $road = Road::find($travel->road_id);
-    
-        if ($request->name !== $travel->name) {
-            $travelSlug = $this->generateUniqueSlug($request->name);
-        } else {
-            $travelSlug = $travel->slug;
+public function update(Request $request, $slug)
+{
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'start_date' => 'required|date',
+        'end_date' => 'required|date',
+        'image' => 'nullable|string',
+        'meal' => 'nullable|string',
+        'curiosity' => 'nullable|string',
+        'roads' => 'required|array',
+        'roads.*.name' => 'required|string|max:255',
+        'roads.*.description' => 'nullable|string',
+        'roads.*.start_date' => 'required|date',
+        'roads.*.end_date' => 'required|date',
+        'roads.*.rate' => 'required|integer',
+        'roads.*.note' => 'nullable|string',
+        'roads.*.image' => 'nullable|string'
+    ]);
+
+    $travel = Travel::where('slug', $slug)->firstOrFail();
+
+    if ($request->name !== $travel->name) {
+        $travelSlug = $this->generateUniqueSlug($request->name);
+    } else {
+        $travelSlug = $travel->slug;
+    }
+
+    if ($request->image) {
+        $imageData = $request->image;
+        if (strpos($imageData, ';base64,') !== false) {
+            list($type, $data) = explode(';base64,', $imageData);
+            $data = base64_decode($data);
+
+            if (strpos($type, 'image/jpeg') !== false) {
+                $extension = 'jpg';
+            } elseif (strpos($type, 'image/png') !== false) {
+                $extension = 'png';
+            } elseif (strpos($type, 'image/gif') !== false) {
+                $extension = 'gif';
+            } else {
+                return response()->json(['error' => 'Invalid image type'], 422);
+            }
+
+            $fileName = Str::random() . '.' . $extension;
+            $filePath = 'images/' . $fileName;
+            Storage::disk('public')->put($filePath, $data);
+
+            \Log::info('Image saved to: ' . $filePath);
+
+            if ($travel->image) {
+                Storage::disk('public')->delete($travel->image);
+            }
+
+            $travel->image = $filePath;
         }
-    
-        if ($request->road['name'] !== $road->name) {
-            $roadSlug = $this->generateUniqueSlug($request->road['name']);
+    }
+
+    $travel->update([
+        'name' => $request->name,
+        'description' => $request->description,
+        'start_date' => $request->start_date,
+        'end_date' => $request->end_date,
+        'meal' => $request->meal,
+        'curiosity' => $request->curiosity,
+        'slug' => $travelSlug,
+    ]);
+
+    foreach ($request->roads as $roadData) {
+        $road = Road::find($roadData['id']);
+
+        if (!$road) {
+            continue; // Skip if the road is not found
+        }
+
+        if ($roadData['name'] !== $road->name) {
+            $roadSlug = $this->generateUniqueSlug($roadData['name']);
         } else {
             $roadSlug = $road->slug;
         }
-    
-        if ($request->image) {
-            $imageData = $request->image;
-            if (strpos($imageData, ';base64,') !== false) {
-                list($type, $data) = explode(';base64,', $imageData);
-                $data = base64_decode($data);
-    
-                if (strpos($type, 'image/jpeg') !== false) {
-                    $extension = 'jpg';
-                } elseif (strpos($type, 'image/png') !== false) {
-                    $extension = 'png';
-                } elseif (strpos($type, 'image/gif') !== false) {
-                    $extension = 'gif';
-                } else {
-                    return response()->json(['error' => 'Invalid image type'], 422);
-                }
-    
-                $fileName = Str::random() . '.' . $extension;
-                $filePath = 'images/' . $fileName;
-                Storage::disk('public')->put($filePath, $data);
-    
-                \Log::info('Image saved to: ' . $filePath);
-    
-                if ($travel->image) {
-                    Storage::disk('public')->delete($travel->image);
-                }
-    
-                $travel->image = $filePath;
-            }
-        }
-    
-        if ($request->road['image']) {
-            $roadImageData = $request->road['image'];
+
+        if ($roadData['image']) {
+            $roadImageData = $roadData['image'];
             if (strpos($roadImageData, ';base64,') !== false) {
-                list($roadType, $roadData) = explode(';base64,', $roadImageData);
-                $roadData = base64_decode($roadData);
-    
+                list($roadType, $roadImage) = explode(';base64,', $roadImageData);
+                $roadImage = base64_decode($roadImage);
+
                 if (strpos($roadType, 'image/jpeg') !== false) {
                     $roadExtension = 'jpg';
                 } elseif (strpos($roadType, 'image/png') !== false) {
@@ -169,44 +183,36 @@ public function store(Request $request)
                 } else {
                     return response()->json(['error' => 'Invalid image type'], 422);
                 }
-    
+
                 $roadFileName = Str::random() . '.' . $roadExtension;
                 $roadFilePath = 'images/' . $roadFileName;
-                Storage::disk('public')->put($roadFilePath, $roadData);
-    
+                Storage::disk('public')->put($roadFilePath, $roadImage);
+
                 \Log::info('Road image saved to: ' . $roadFilePath);
-    
+
                 if ($road->image) {
                     Storage::disk('public')->delete($road->image);
                 }
-    
+
                 $road->image = $roadFilePath;
             }
         }
-    
-        $travel->update([
-            'name' => $request->name,
-            'description' => $request->description,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
-            'meal' => $request->meal,
-            'curiosity' => $request->curiosity,
-            'slug' => $travelSlug,
-        ]);
-    
+
         $road->update([
-            'name' => $request->road['name'],
-            'description' => $request->road['description'],
-            'start_date' => $request->road['start_date'],
-            'end_date' => $request->road['end_date'],
-            'rate' => $request->road['rate'],
-            'note' => $request->road['note'],
+            'name' => $roadData['name'],
+            'description' => $roadData['description'],
+            'start_date' => $roadData['start_date'],
+            'end_date' => $roadData['end_date'],
+            'rate' => $roadData['rate'],
+            'note' => $roadData['note'],
             'slug' => $roadSlug,
         ]);
-    
-        return response()->json(['travel' => $travel, 'road' => $road], 200);
     }
-    
+
+    return response()->json(['travel' => $travel, 'roads' => $travel->roads], 200);
+}
+
+
     private function generateUniqueSlug($name)
     {
         $slug = Str::slug($name, '-');
