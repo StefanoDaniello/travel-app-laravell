@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Storage;
 
 class TravelController extends Controller
 {
-
     public function index()
     {
         $travels = Travel::all();
@@ -35,21 +34,40 @@ class TravelController extends Controller
             'meal' => 'nullable|string',
             'curiosity' => 'nullable|string',
             'road_name' => 'required|string|max:255',
+            'road_description' => 'nullable|string',
+            'road_start_date' => 'required|date',
+            'road_end_date' => 'required|date',
+            'road_rate' => 'required|integer',
+            'road_note' => 'nullable|string',
+            'road_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
         ]);
 
-        $slug = $this->generateUniqueSlug($request->name);
 
         $imagePath = null;
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('images', 'public');
         }
 
-        
+        $roadImagePath = null;
+        if ($request->hasFile('road_image')) {
+            $roadImagePath = $request->file('road_image')->store('images', 'public');
+        }
+
+        // Create the road record
+        $roadSlug = $this->generateUniqueSlug($request->road_name);
         $road = Road::create([
             'name' => $request->road_name,
+            'description' => $request->road_description,
+            'image' => $roadImagePath,
+            'start_date' => $request->road_start_date,
+            'end_date' => $request->road_end_date,
+            'rate' => $request->road_rate,
+            'note' => $request->road_note,
+            'slug' => $roadSlug,
         ]);
 
         // Create the travel record and associate it with the road
+        $travelSlug = $this->generateUniqueSlug($request->name);
         $travel = Travel::create([
             'name' => $request->name,
             'description' => $request->description,
@@ -58,20 +76,9 @@ class TravelController extends Controller
             'image' => $imagePath,
             'meal' => $request->meal,
             'curiosity' => $request->curiosity,
-            'slug' => $slug,
+            'slug' => $travelSlug,
             'road_id' => $road->id,
         ]);
-
-        // $travel = Travel::create([
-        //     'name' => $request->name,
-        //     'description' => $request->description,
-        //     'start_date' => $request->start_date,
-        //     'end_date' => $request->end_date,
-        //     'image' => $imagePath,
-        //     'meal' => $request->meal,
-        //     'curiosity' => $request->curiosity,
-        //     'slug' => $slug,
-        // ]);
 
         return response()->json($travel, 201);
     }
@@ -83,7 +90,7 @@ class TravelController extends Controller
             'description' => 'nullable|string',
             'start_date' => 'required|date',
             'end_date' => 'required|date',
-            'road_id' => 'nullable|exists:roads,id',
+            'road_id' => 'nullable|exists:road,id',
             'image' => 'nullable|string',
             'meal' => 'nullable|string',
             'curiosity' => 'nullable|string',
@@ -139,7 +146,7 @@ class TravelController extends Controller
             'meal' => $request->meal,
             'curiosity' => $request->curiosity,
             'slug' => $slug,
-            'road_id' => $request->road_id, 
+            'road_id' => $request->road_id, // Update road_id if provided
         ]);
 
         return response()->json($travel, 200);
@@ -159,5 +166,6 @@ class TravelController extends Controller
         return $slug;
     }
 }
+
 
 

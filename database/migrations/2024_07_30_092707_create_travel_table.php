@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('name',255);
             $table->text('description')->nullable();
-            $table->dateTime('start_date');
-            $table->dateTime('end_date');
+            $table->date('start_date');
+            $table->date('end_date');
             $table->string('image')->nullable();
             $table->text('meal')->nullable();
             $table->text('curiosity')->nullable();

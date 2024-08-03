@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Road extends Model
 {
     use HasFactory;
+    protected $table = 'road'; 
     protected $guarded = [];
 
     public function travel(){
