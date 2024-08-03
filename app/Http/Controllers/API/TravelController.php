@@ -25,66 +25,71 @@ class TravelController extends Controller
 }
 
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'meal' => 'nullable|string',
-            'curiosity' => 'nullable|string',
-            'road_name' => 'required|string|max:255',
-            'road_description' => 'nullable|string',
-            'road_start_date' => 'required|date',
-            'road_end_date' => 'required|date',
-            'road_rate' => 'required|integer',
-            'road_note' => 'nullable|string',
-            'road_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
-        ]);
+public function store(Request $request)
+{
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'start_date' => 'required|date',
+        'end_date' => 'required|date',
+        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        'meal' => 'nullable|string',
+        'curiosity' => 'nullable|string',
+        'roads' => 'required|array',
+        'roads.*.name' => 'required|string|max:255',
+        'roads.*.description' => 'nullable|string',
+        'roads.*.start_date' => 'required|date',
+        'roads.*.end_date' => 'required|date',
+        'roads.*.rate' => 'required|integer',
+        'roads.*.note' => 'nullable|string',
+        'roads.*.image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
+    ]);
 
+    $imagePath = null;
+    if ($request->hasFile('image')) {
+        $imagePath = $request->file('image')->store('images', 'public');
+    }
 
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('images', 'public');
-        }
+    // Create the travel record
+    $travelSlug = $this->generateUniqueSlug($request->name);
+    $travel = Travel::create([
+        'name' => $request->name,
+        'description' => $request->description,
+        'start_date' => $request->start_date,
+        'end_date' => $request->end_date,
+        'image' => $imagePath,
+        'meal' => $request->meal,
+        'curiosity' => $request->curiosity,
+        'slug' => $travelSlug,
+    ]);
 
+    // Iterate over the roads and create records for each
+    foreach ($request->roads as $roadData) {
         $roadImagePath = null;
-        if ($request->hasFile('road_image')) {
-            $roadImagePath = $request->file('road_image')->store('images', 'public');
+        if (isset($roadData['image']) && $roadData['image']) {
+            $roadImage = $roadData['image'];
+            $roadImagePath = $roadImage->store('images', 'public');
         }
 
-        // Create the road record
-        $roadSlug = $this->generateUniqueSlug($request->road_name);
+        $roadSlug = $this->generateUniqueSlug($roadData['name']);
         $road = Road::create([
-            'name' => $request->road_name,
-            'description' => $request->road_description,
+            'name' => $roadData['name'],
+            'description' => $roadData['description'],
             'image' => $roadImagePath,
-            'start_date' => $request->road_start_date,
-            'end_date' => $request->road_end_date,
-            'rate' => $request->road_rate,
-            'note' => $request->road_note,
+            'start_date' => $roadData['start_date'],
+            'end_date' => $roadData['end_date'],
+            'rate' => $roadData['rate'],
+            'note' => $roadData['note'],
             'slug' => $roadSlug,
         ]);
 
-        // Create the travel record and associate it with the road
-        $travelSlug = $this->generateUniqueSlug($request->name);
-        $travel = Travel::create([
-            'name' => $request->name,
-            'description' => $request->description,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
-            'image' => $imagePath,
-            'meal' => $request->meal,
-            'curiosity' => $request->curiosity,
-            'slug' => $travelSlug,
-            'road_id' => $road->id,
-        ]);
-
-        return response()->json($travel, 201);
+        // Associate the road ID with the travel record
+        $travel->road_id = $road->id;
+        $travel->save();
     }
 
+    return response()->json($travel, 201);
+}
     public function update(Request $request, $slug)
     {
         $request->validate([
