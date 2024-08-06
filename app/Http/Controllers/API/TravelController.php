@@ -40,7 +40,7 @@ public function store(Request $request)
         'roads.*.description' => 'nullable|string',
         'roads.*.start_date' => 'required|date',
         'roads.*.end_date' => 'required|date',
-        'roads.*.rate' => 'required|integer',
+        'roads.*.rate' => 'nullable|integer',
         'roads.*.note' => 'nullable|string',
         'roads.*.image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
     ]);
@@ -87,6 +87,61 @@ public function store(Request $request)
 
     return response()->json($travel, 201);
 }
+
+
+public function update(Request $request, $slug){
+
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'start_date' => 'required|date',
+        'end_date' => 'required|date',
+        'image' => 'nullable|max:2048',
+        'meal' => 'nullable|string',
+        'curiosity' => 'nullable|string',
+        'road' => 'required|array',
+        'road.*.name' => 'required|string|max:255',
+        'road.*.description' => 'nullable|string',
+        'road.*.start_date' => 'required|date',
+        'road.*.end_date' => 'required|date',
+        'road.*.rate' => 'nullable|integer',
+        'road.*.note' => 'nullable|string',
+        'road.*.image' => 'nullable|max:2048'
+    ]);
+
+    $travel = Travel::where('slug', $slug)->firstOrFail();	
+        $travel->update([
+        'name' => $request->name,
+        'description' => $request->description,
+        'image' => $request->image,
+        'start_date' => $request->start_date,
+        'end_date' => $request->end_date,
+        'meal' => $request->meal,
+        'curiosity' => $request->curiosity,
+        'slug' => $request->slug,
+    ]);
+
+
+
+    // Iterate over the road and create records for each
+    foreach ($request->road as $roadData) {
+        $road = Road::where('slug', $roadData['slug'])->firstOrFail();
+        $road->update([
+            'name' => $roadData['name'],
+            'description' => $roadData['description'],
+            'image' => $roadData['image'],
+            'start_date' => $roadData['start_date'],
+            'end_date' => $roadData['end_date'],
+            'rate' => $roadData['rate'],
+            'note' => $roadData['note'],
+            'slug' => $roadData['slug'],
+        ]);
+        
+    }
+
+    return response()->json(['travel' => $travel, 'road' => $travel->road], 200);
+}
+
 // public function update(Request $request, $slug)
 // {
 //     $request->validate([
