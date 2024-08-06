@@ -32,7 +32,7 @@ public function store(Request $request)
         'description' => 'nullable|string',
         'start_date' => 'required|date',
         'end_date' => 'required|date',
-        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        'image' => 'nullable|image|max:2048',
         'meal' => 'nullable|string',
         'curiosity' => 'nullable|string',
         'roads' => 'required|array',
@@ -42,7 +42,7 @@ public function store(Request $request)
         'roads.*.end_date' => 'required|date',
         'roads.*.rate' => 'nullable|integer',
         'roads.*.note' => 'nullable|string',
-        'roads.*.image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
+        'roads.*.image' => 'nullable|image|max:2048'
     ]);
 
     $imagePath = null;
