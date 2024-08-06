@@ -281,6 +281,12 @@ public function update(Request $request, $slug){
     
         return $slug;
     }
+
+   public function destroy($slug) {
+    $travel = Travel::where('slug', $slug)->firstOrFail();
+    $travel->delete();
+    return response()->json(['message' => 'Travel deleted successfully'], 200);
+   }
 }
 
 
