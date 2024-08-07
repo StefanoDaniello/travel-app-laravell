@@ -33,6 +33,9 @@ public function store(Request $request)
         'start_date' => 'required|date',
         'end_date' => 'required|date',
         'image' => 'nullable|image|max:2048',
+        'luogo' => 'required|string',
+        'latitudine' => 'nullable',
+        'longitudine' => 'nullable',
         'meal' => 'nullable|string',
         'curiosity' => 'nullable|string',
         'roads' => 'required|array',
@@ -42,7 +45,10 @@ public function store(Request $request)
         'roads.*.end_date' => 'required|date',
         'roads.*.rate' => 'nullable|integer',
         'roads.*.note' => 'nullable|string',
-        'roads.*.image' => 'nullable|image|max:2048'
+        'roads.*.image' => 'nullable|image|max:2048',
+        'roads.*.via' => 'required|string',
+        'roads.*.latitudine' => 'nullable',
+        'roads.*.longitudine' => 'nullable',
     ]);
 
     $imagePath = null;
@@ -58,6 +64,9 @@ public function store(Request $request)
         'start_date' => $request->start_date,
         'end_date' => $request->end_date,
         'image' => $imagePath,
+        'luogo' => $request->luogo,
+        'latitudine' => $request->latitudine,
+        'longitudine' => $request->longitudine,
         'meal' => $request->meal,
         'curiosity' => $request->curiosity,
         'slug' => $travelSlug,
@@ -81,6 +90,9 @@ public function store(Request $request)
             'rate' => $roadData['rate'],
             'note' => $roadData['note'],
             'slug' => $roadSlug,
+            'via' => $roadData['via'],
+            'latitudine' => $roadData['latitudine'],
+            'longitudine' => $roadData['longitudine'],
             'travel_id' => $travel->id, // Associa la road al travel
         ]);
     }
@@ -97,6 +109,9 @@ public function update(Request $request, $slug){
         'start_date' => 'required|date',
         'end_date' => 'required|date',
         'image' => 'nullable|max:2048',
+        'luogo' => 'required|string',
+        'latitudine' => 'nullable',
+        'longitudine' => 'nullable',
         'meal' => 'nullable|string',
         'curiosity' => 'nullable|string',
         'road' => 'required|array',
@@ -106,7 +121,10 @@ public function update(Request $request, $slug){
         'road.*.end_date' => 'required|date',
         'road.*.rate' => 'nullable|integer',
         'road.*.note' => 'nullable|string',
-        'road.*.image' => 'nullable|max:2048'
+        'road.*.image' => 'nullable|max:2048',
+        'roads.*.via' => 'required|string',
+        'roads.*.latitudine' => 'nullable',
+        'roads.*.longitudine' => 'nullable',
     ]);
 
     $travel = Travel::where('slug', $slug)->firstOrFail();	
@@ -114,6 +132,9 @@ public function update(Request $request, $slug){
         'name' => $request->name,
         'description' => $request->description,
         'image' => $request->image,
+        'luogo' => $request->luogo,
+        'latitudine' => $request->latitudine,
+        'longitudine' => $request->longitudine,
         'start_date' => $request->start_date,
         'end_date' => $request->end_date,
         'meal' => $request->meal,
@@ -134,6 +155,9 @@ public function update(Request $request, $slug){
             'end_date' => $roadData['end_date'],
             'rate' => $roadData['rate'],
             'note' => $roadData['note'],
+            'via' => $roadData['via'],
+            'latitudine' => $roadData['latitudine'],
+            'longitudine' => $roadData['longitudine'],
             'slug' => $roadData['slug'],
         ]);
         

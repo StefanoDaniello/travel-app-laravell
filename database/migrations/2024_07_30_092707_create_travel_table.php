@@ -20,6 +20,9 @@ return new class extends Migration
             $table->string('image')->nullable();
             $table->text('meal')->nullable();
             $table->text('curiosity')->nullable();
+            $table->text('luogo')->nullable();
+            $table->decimal('latitudine',30,15)->nullable();
+            $table->decimal('longitudine',30,15)->nullable();
             $table->string('slug',255);
             $table->timestamps();
         });

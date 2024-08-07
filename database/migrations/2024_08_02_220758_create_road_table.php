@@ -21,6 +21,9 @@ return new class extends Migration
             $table->integer('rate')->default(0);
             $table->text('note')->nullable();
             $table->string('slug', 255);
+            $table->text('via')->nullable();
+            $table->decimal('latitudine',30,15)->nullable();
+            $table->decimal('longitudine',30,15)->nullable();
             $table->foreignId('travel_id')->constrained()->onDelete('cascade'); 
             $table->timestamps();
         });
