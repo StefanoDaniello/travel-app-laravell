@@ -12,10 +12,14 @@ use Illuminate\Support\Facades\Storage;
 class TravelController extends Controller
 {
     public function index()
-{
-    $travels = Travel::with('road')->get();
-    return response()->json($travels, 200);
-}
+    {
+        $travels = Travel::with('road')
+            ->orderBy('start_date', 'desc')
+            ->get();
+        
+        return response()->json($travels, 200);
+    }
+    
 
 
     public function show($slug)
