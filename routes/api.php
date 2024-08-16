@@ -29,5 +29,6 @@ Route::post('/travel', [TravelController::class, 'store']);
 Route::put('/travel/{slug}', [TravelController::class, 'update']);
 Route::delete('/travel/{slug}', [TravelController::class, 'destroy']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('register', [AuthController::class, 'register']);
 
 
