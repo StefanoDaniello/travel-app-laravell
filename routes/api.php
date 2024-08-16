@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\TravelController;
+use App\Http\Controllers\Api\AuthController;
 
 
 /*
@@ -27,4 +28,6 @@ Route::get('/travel/{slug}', [TravelController::class, 'show']);
 Route::post('/travel', [TravelController::class, 'store']);
 Route::put('/travel/{slug}', [TravelController::class, 'update']);
 Route::delete('/travel/{slug}', [TravelController::class, 'destroy']);
+Route::post('/login', [AuthController::class, 'login']);
+
 
