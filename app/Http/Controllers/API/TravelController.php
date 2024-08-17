@@ -5,22 +5,29 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Travel;
 use App\Models\Road;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 
 class TravelController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $userId = $request->input('user_id'); 
+    
+        if (!$userId) {
+            return response()->json(['message' => 'ID utente mancante'], 400);
+        }
+    
         $travels = Travel::with('road')
+            ->where('user_id', $userId)
             ->orderBy('start_date', 'desc')
             ->get();
-        
+    
         return response()->json($travels, 200);
     }
     
-
 
     public function show($slug)
 {
@@ -42,6 +49,7 @@ public function store(Request $request)
         'longitudine' => 'nullable',
         'meal' => 'nullable|string',
         'curiosity' => 'nullable|string',
+        'user_id' => 'required|exists:users,id',
         'roads' => 'required|array',
         'roads.*.name' => 'required|string|max:255',
         'roads.*.description' => 'nullable|string',
@@ -73,6 +81,7 @@ public function store(Request $request)
         'longitudine' => $request->longitudine,
         'meal' => $request->meal,
         'curiosity' => $request->curiosity,
+        'user_id' => $request->user_id,
         'slug' => $travelSlug,
     ]);
 
@@ -118,6 +127,7 @@ public function update(Request $request, $slug){
         'longitudine' => 'nullable',
         'meal' => 'nullable|string',
         'curiosity' => 'nullable|string',
+        'user_id' => 'required|exists:users,id',
         'road' => 'required|array',
         'road.*.name' => 'required|string|max:255',
         'road.*.description' => 'nullable|string',
@@ -143,6 +153,7 @@ public function update(Request $request, $slug){
         'end_date' => $request->end_date,
         'meal' => $request->meal,
         'curiosity' => $request->curiosity,
+        'user_id' => $request->user_id,
         'slug' => $request->slug,
     ]);
 

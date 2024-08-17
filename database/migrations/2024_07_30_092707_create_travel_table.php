@@ -24,6 +24,7 @@ return new class extends Migration
             $table->decimal('latitudine',30,15)->nullable();
             $table->decimal('longitudine',30,15)->nullable();
             $table->string('slug',255);
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }

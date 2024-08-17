@@ -14,4 +14,7 @@ class Travel extends Model
     public function road(){
         return $this->hasMany(Road::class);
     }
+    public function user(){
+        return $this->belongsTo(User::class);
+    }
 }
