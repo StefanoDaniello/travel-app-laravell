@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [env('APP_FRONTEND_URL', 'http://localhost:5173')],
+    'allowed_origins' => [env('APP_FRONTEND_URL', 'https://adorable-pastelito-4df116.netlify.app')],
     
     'allowed_origins_patterns' => [],
 
